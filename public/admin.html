@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard — Thompson & Martinez</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #F7F7F5; --white: #FFFFFF; --surface: #F2EEE6;
+      --border: #E2DDD4; --text: #1C1C1A; --muted: #6B6860;
+      --gold: #8B7355; --dark: #2C2C2A;
+      --sidebar-w: 220px;
+      --font: 'Inter', system-ui, sans-serif;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Login ──────────────────────────────────────────────── */
+    #login-page {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: var(--dark); padding: 20px;
+    }
+    .login-box {
+      background: var(--white); border-radius: 8px; padding: 44px 36px; width: 100%; max-width: 400px;
+    }
+    .login-box h1 { font-size: 1.3rem; margin-bottom: 4px; }
+    .login-box .sub { font-size: .8rem; color: var(--muted); margin-bottom: 28px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+    .form-group input {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 4px;
+      font-size: 14px; font-family: var(--font); outline: none; transition: border-color .2s;
+    }
+    .form-group input:focus { border-color: var(--gold); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 9px 18px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+      border: none; cursor: pointer; border-radius: 4px; transition: background .2s;
+    }
+    .btn-primary { background: var(--gold); color: #fff; width: 100%; padding: 11px; }
+    .btn-primary:hover { background: #7a6447; }
+    .btn-sm { padding: 6px 12px; font-size: 11px; }
+    .btn-success  { background: #d1fae5; color: #065f46; }
+    .btn-danger   { background: #fee2e2; color: #991b1b; }
+    .btn-ghost    { background: var(--surface); color: var(--text); }
+    .btn-ghost:hover { background: var(--border); }
+    .btn-dark     { background: var(--dark); color: #fff; }
+    .btn-dark:hover { background: #444; }
+    .alert { padding: 10px 14px; border-radius: 4px; font-size: .875rem; margin-top: 10px; }
+    .alert-error { background: #fee2e2; color: #991b1b; }
+
+    /* ── Layout ─────────────────────────────────────────────── */
+    #admin-page { display: none; min-height: 100vh; display: flex; flex-direction: column; }
+    .top-bar {
+      background: var(--dark); color: #fff; height: 52px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; flex-shrink: 0; position: sticky; top: 0; z-index: 10;
+    }
+    .top-bar .brand { font-size: .95rem; font-weight: 600; }
+    .top-bar .brand span { font-weight: 300; color: rgba(255,255,255,.5); margin-left: 8px; }
+    .layout { display: flex; flex: 1; }
+    .sidebar {
+      width: var(--sidebar-w); background: var(--white); border-right: 1px solid var(--border);
+      padding: 20px 0; position: sticky; top: 52px; height: calc(100vh - 52px); overflow-y: auto;
+    }
+    .sidebar nav ul { list-style: none; }
+    .sidebar nav li a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 20px; font-size: .875rem; font-weight: 500; color: var(--muted);
+      transition: all .15s; border-left: 3px solid transparent;
+    }
+    .sidebar nav li a:hover, .sidebar nav li a.active {
+      color: var(--text); background: var(--bg); border-left-color: var(--gold);
+    }
+    .sidebar nav li a svg { flex-shrink: 0; }
+    .sidebar-section { padding: 16px 20px 6px; font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: rgba(0,0,0,.3); }
+    .main { flex: 1; padding: 28px; overflow-x: hidden; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .page-header { margin-bottom: 24px; }
+    .page-header h1 { font-size: 1.4rem; font-weight: 600; }
+    .page-header p  { color: var(--muted); font-size: .875rem; margin-top: 4px; }
+
+    /* ── Stats ──────────────────────────────────────────────── */
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 20px; }
+    .stat-card .label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .stat-card .value { font-size: 2rem; font-weight: 600; margin-top: 4px; }
+    .stat-card .sub   { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── Card & Table ────────────────────────────────────────── */
+    .card { background: var(--white); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 24px; }
+    .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .card-header h2 { font-size: 1rem; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: var(--bg); padding: 10px 16px; font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); text-align: left; border-bottom: 1px solid var(--border); }
+    tbody td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: .875rem; vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--bg); }
+    .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-pending   { background: #fef3c7; color: #92400e; }
+    .badge-confirmed { background: #d1fae5; color: #065f46; }
+    .badge-cancelled { background: #f3f4f6; color: #6b7280; }
+    .badge-unread    { background: #ede9fe; color: #5b21b6; }
+    .badge-read      { background: #f3f4f6; color: #6b7280; }
+    .empty-state { text-align: center; padding: 40px; color: var(--muted); font-size: .875rem; }
+
+    /* ── Forms (modal) ──────────────────────────────────────── */
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+    .modal-bg.open { display: flex; }
+    .modal { background: var(--white); border-radius: 8px; padding: 32px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; position: relative; }
+    .modal h2 { font-size: 1.2rem; margin-bottom: 20px; }
+    .modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--muted); }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-group-modal { margin-bottom: 14px; }
+    .form-group-modal label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+    .form-group-modal input, .form-group-modal select, .form-group-modal textarea {
+      width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 4px;
+      font-size: 14px; font-family: var(--font); outline: none;
+    }
+    .form-group-modal input:focus, .form-group-modal select:focus { border-color: var(--gold); }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="login-page">
+  <div class="login-box">
+    <h1>Admin Dashboard</h1>
+    <p class="sub">Thompson &amp; Martinez Fine Art Appraisals</p>
+    <form id="admin-login-form">
+      <div class="form-group">
+        <label>Admin Email</label>
+        <input type="email" name="email" required placeholder="admin@..." />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" required placeholder="Password" />
+      </div>
+      <button type="submit" class="btn btn-primary">Sign In →</button>
+      <div id="login-msg"></div>
+    </form>
+    <p style="margin-top:16px;font-size:.8rem;color:var(--muted);">Default credentials are set in your <code>.env</code> file.</p>
+  </div>
+</div>
+
+<!-- ══ ADMIN PAGE ══ -->
+<div id="admin-page" style="display:none;">
+  <div class="top-bar">
+    <div class="brand">Thompson &amp; Martinez <span>Admin</span></div>
+    <button class="btn btn-sm" style="background:rgba(255,255,255,.1);color:#fff;" onclick="logout()">Sign Out</button>
+  </div>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <nav>
+        <ul>
+          <li class="sidebar-section">Overview</li>
+          <li><a href="#" class="active" data-page="dashboard">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Dashboard
+          </a></li>
+          <li class="sidebar-section">Intake</li>
+          <li><a href="#" data-page="appointments">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Appointments
+          </a></li>
+          <li><a href="#" data-page="inquiries">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,4 12,13 2,4"/></svg>
+            Inquiries
+          </a></li>
+          <li class="sidebar-section">Clients</li>
+          <li><a href="#" data-page="clients">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+            Clients
+          </a></li>
+          <li><a href="#" data-page="reports">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Reports
+          </a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main">
+
+      <!-- Dashboard -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header"><h1>Overview</h1><p>At-a-glance stats for today.</p></div>
+        <div class="stat-grid" id="stat-grid">
+          <div class="stat-card"><div class="label">Appointments</div><div class="value" id="s-appts">—</div><div class="sub" id="s-pending">— pending</div></div>
+          <div class="stat-card"><div class="label">Unread Inquiries</div><div class="value" id="s-unread">—</div><div class="sub" id="s-inquiries-total">— total</div></div>
+          <div class="stat-card"><div class="label">Clients</div><div class="value" id="s-clients">—</div><div class="sub">portal accounts</div></div>
+          <div class="stat-card"><div class="label">Reports Filed</div><div class="value" id="s-reports">—</div><div class="sub">appraisal reports</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h2>Recent Appointments</h2><a href="#" data-page="appointments" class="btn btn-sm btn-ghost">View All →</a></div>
+          <div id="dash-appts"></div>
+        </div>
+      </div>
+
+      <!-- Appointments -->
+      <div class="page" id="page-appointments">
+        <div class="page-header"><h1>Appointments</h1><p>Review and confirm booking requests.</p></div>
+        <div class="card">
+          <div class="card-header"><h2>All Appointments</h2></div>
+          <div id="appts-table"></div>
+        </div>
+      </div>
+
+      <!-- Inquiries -->
+      <div class="page" id="page-inquiries">
+        <div class="page-header"><h1>Inquiries</h1><p>Contact form and quick-quote submissions.</p></div>
+        <div class="card">
+          <div class="card-header"><h2>All Inquiries</h2></div>
+          <div id="inq-table"></div>
+        </div>
+      </div>
+
+      <!-- Clients -->
+      <div class="page" id="page-clients">
+        <div class="page-header"><h1>Clients</h1><p>Manage client portal accounts.</p></div>
+        <div class="card">
+          <div class="card-header">
+            <h2>Client Accounts</h2>
+            <button class="btn btn-dark btn-sm" onclick="openNewClientModal()">+ New Client</button>
+          </div>
+          <div id="clients-table"></div>
+        </div>
+      </div>
+
+      <!-- Reports -->
+      <div class="page" id="page-reports">
+        <div class="page-header"><h1>Appraisal Reports</h1><p>File reports against client accounts.</p></div>
+        <div class="card">
+          <div class="card-header">
+            <h2>All Reports</h2>
+            <button class="btn btn-dark btn-sm" onclick="openNewReportModal()">+ Add Report</button>
+          </div>
+          <div id="reports-table"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ══ Modals ══ -->
+<div class="modal-bg" id="new-client-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('new-client-modal')">✕</button>
+    <h2>Create Client Account</h2>
+    <form id="new-client-form">
+      <div class="form-row-2">
+        <div class="form-group-modal"><label>Full Name *</label><input type="text" name="name" required /></div>
+        <div class="form-group-modal"><label>Email *</label><input type="email" name="email" required /></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group-modal"><label>Phone</label><input type="tel" name="phone" /></div>
+        <div class="form-group-modal"><label>Password *</label><input type="text" name="password" required placeholder="min 8 chars" /></div>
+      </div>
+      <p style="font-size:.8rem;color:var(--muted);">Share these credentials with the client so they can log in to their portal.</p>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('new-client-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="width:auto;">Create Account</button>
+      </div>
+      <div id="new-client-msg"></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-bg" id="new-report-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('new-report-modal')">✕</button>
+    <h2>Add Appraisal Report</h2>
+    <form id="new-report-form">
+      <div class="form-group-modal">
+        <label>Client *</label>
+        <select name="client_id" id="report-client-select" required><option value="">— Select client —</option></select>
+      </div>
+      <div class="form-group-modal"><label>Report Title *</label><input type="text" name="title" required placeholder="e.g. Insurance Appraisal – Oil on Canvas" /></div>
+      <div class="form-group-modal"><label>Artwork Description</label><input type="text" name="artwork_desc" placeholder="Artist, medium, dimensions, year..." /></div>
+      <div class="form-row-2">
+        <div class="form-group-modal"><label>Appraised Value</label><input type="text" name="appraisal_value" placeholder="e.g. $45,000" /></div>
+        <div class="form-group-modal"><label>Report Date</label><input type="date" name="report_date" /></div>
+      </div>
+      <div class="form-group-modal"><label>Report File URL</label><input type="url" name="file_url" placeholder="https://drive.google.com/..." /></div>
+      <div class="form-group-modal"><label>Internal Notes</label><textarea name="notes" rows="2" style="border:1px solid var(--border);border-radius:4px;width:100%;padding:8px;font-family:var(--font);font-size:13px;"></textarea></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('new-report-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="width:auto;">Save Report</button>
+      </div>
+      <div id="new-report-msg"></div>
+    </form>
+  </div>
+</div>
+
+<script>
+const TOKEN_KEY = 'tm_admin_token';
+let token = localStorage.getItem(TOKEN_KEY);
+
+function logout() { localStorage.removeItem(TOKEN_KEY); location.reload(); }
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function formatDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+}
+
+async function api(method, path, body) {
+  const res = await fetch(path, {
+    method,
+    headers: { 'Content-Type':'application/json', 'Authorization': `Bearer ${token}` },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (res.status === 401) { logout(); throw new Error('Session expired'); }
+  return res.json();
+}
+
+// ── Login ────────────────────────────────────────
+document.getElementById('admin-login-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target).entries());
+  const msg  = document.getElementById('login-msg');
+  const btn  = e.target.querySelector('button');
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const json = await (await fetch('/api/auth/admin-login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) })).json();
+    if (!json.token) throw new Error(json.error || 'Login failed');
+    token = json.token;
+    localStorage.setItem(TOKEN_KEY, token);
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('admin-page').style.display = 'flex';
+    loadAll();
+  } catch(err) {
+    msg.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+    btn.disabled = false; btn.textContent = 'Sign In →';
+  }
+});
+
+// ── Navigation ───────────────────────────────────
+document.querySelectorAll('[data-page]').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const page = link.dataset.page;
+    document.querySelectorAll('[data-page]').forEach(l => l.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    link.classList.add('active');
+    document.getElementById('page-' + page).classList.add('active');
+  });
+});
+
+// ── Load everything ──────────────────────────────
+let allClients = [];
+
+async function loadAll() {
+  loadStats();
+  loadAppointments();
+  loadInquiries();
+  loadClients();
+  loadReports();
+}
+
+async function loadStats() {
+  const s = await api('GET', '/api/admin/stats');
+  document.getElementById('s-appts').textContent = s.appointments.total;
+  document.getElementById('s-pending').textContent = `${s.appointments.pending} pending`;
+  document.getElementById('s-unread').textContent = s.inquiries.unread;
+  document.getElementById('s-inquiries-total').textContent = `${s.inquiries.total} total`;
+  document.getElementById('s-clients').textContent = s.clients;
+  document.getElementById('s-reports').textContent = s.reports;
+}
+
+async function loadAppointments() {
+  const rows = await api('GET', '/api/admin/appointments');
+  const html = tableHtml(
+    ['#', 'Name', 'Service', 'Date', 'Time', 'Phone', 'Status', 'Actions'],
+    rows,
+    r => `<td>${r.id}</td>
+          <td>${esc(r.name)}<br><span style="color:var(--muted);font-size:.8rem;">${esc(r.email)}</span></td>
+          <td>${esc(r.service)}</td>
+          <td>${formatDate(r.preferred_date)}</td>
+          <td>${esc(r.preferred_time)}</td>
+          <td>${esc(r.phone||'—')}</td>
+          <td><span class="badge badge-${r.status}">${r.status}</span></td>
+          <td style="white-space:nowrap;">
+            ${r.status==='pending' ? `<button class="btn btn-sm btn-success" onclick="updateAppt(${r.id},'confirmed')">Confirm</button> ` : ''}
+            ${r.status!=='cancelled' ? `<button class="btn btn-sm btn-danger" onclick="updateAppt(${r.id},'cancelled')">Cancel</button>` : ''}
+          </td>`
+  );
+  document.getElementById('appts-table').innerHTML = html;
+  // also update dash preview (first 5)
+  document.getElementById('dash-appts').innerHTML = tableHtml(
+    ['#','Name','Service','Date','Status'],
+    rows.slice(0,5),
+    r => `<td>${r.id}</td><td>${esc(r.name)}</td><td>${esc(r.service)}</td><td>${formatDate(r.preferred_date)}</td><td><span class="badge badge-${r.status}">${r.status}</span></td>`
+  );
+}
+
+async function updateAppt(id, status) {
+  await api('PATCH', `/api/admin/appointments/${id}`, { status });
+  loadAppointments(); loadStats();
+}
+
+async function loadInquiries() {
+  const rows = await api('GET', '/api/admin/inquiries');
+  document.getElementById('inq-table').innerHTML = tableHtml(
+    ['#','Date','Name','Subject','Message','Status'],
+    rows,
+    r => `<td>${r.id}</td>
+          <td style="white-space:nowrap;">${formatDate(r.created_at)}</td>
+          <td>${esc(r.name)}<br><a href="mailto:${esc(r.email)}" style="color:var(--gold);font-size:.8rem;">${esc(r.email)}</a></td>
+          <td>${esc(r.subject||'—')}</td>
+          <td style="max-width:280px;">${esc(r.message).slice(0,120)}${r.message.length>120?'…':''}</td>
+          <td>
+            <span class="badge badge-${r.read?'read':'unread'}">${r.read?'Read':'Unread'}</span>
+            ${!r.read ? `<br><button class="btn btn-sm btn-ghost" style="margin-top:4px;" onclick="markRead(${r.id})">Mark Read</button>` : ''}
+          </td>`
+  );
+}
+
+async function markRead(id) {
+  await api('PATCH', `/api/admin/inquiries/${id}/read`);
+  loadInquiries(); loadStats();
+}
+
+async function loadClients() {
+  const rows = await api('GET', '/api/admin/clients');
+  allClients = rows;
+  // populate report client select
+  const sel = document.getElementById('report-client-select');
+  sel.innerHTML = '<option value="">— Select client —</option>' + rows.map(c => `<option value="${c.id}">${esc(c.name)} (${esc(c.email)})</option>`).join('');
+  document.getElementById('clients-table').innerHTML = tableHtml(
+    ['ID','Name','Email','Phone','Joined'],
+    rows,
+    r => `<td>${r.id}</td><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${esc(r.phone||'—')}</td><td>${formatDate(r.created_at)}</td>`
+  );
+}
+
+async function loadReports() {
+  const rows = await api('GET', '/api/admin/reports');
+  document.getElementById('reports-table').innerHTML = tableHtml(
+    ['Client','Report Title','Artwork','Value','Date','File'],
+    rows,
+    r => `<td>${esc(r.client_name)}<br><span style="color:var(--muted);font-size:.8rem;">${esc(r.client_email)}</span></td>
+          <td>${esc(r.title)}</td>
+          <td style="color:var(--muted);max-width:200px;">${esc(r.artwork_desc||'—')}</td>
+          <td><strong>${esc(r.appraisal_value||'—')}</strong></td>
+          <td>${formatDate(r.report_date)}</td>
+          <td>${r.file_url ? `<a href="${esc(r.file_url)}" target="_blank" class="btn btn-sm btn-ghost">Open ↗</a>` : '—'}</td>`
+  );
+}
+
+function tableHtml(headers, rows, rowFn) {
+  if (!rows.length) return '<div class="empty-state">No records yet.</div>';
+  return `<table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${rowFn(r)}</tr>`).join('')}</tbody></table>`;
+}
+
+// ── Modals ───────────────────────────────────────
+function openNewClientModal() { document.getElementById('new-client-modal').classList.add('open'); }
+function openNewReportModal()  { loadClients(); document.getElementById('new-report-modal').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.getElementById('new-client-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target).entries());
+  const msg  = document.getElementById('new-client-msg');
+  try {
+    const json = await api('POST', '/api/admin/clients', data);
+    if (json.error) throw new Error(json.error);
+    msg.innerHTML = '<div class="alert" style="background:#d1fae5;color:#065f46;">Client created!</div>';
+    e.target.reset(); loadClients(); loadStats();
+    setTimeout(() => closeModal('new-client-modal'), 1200);
+  } catch(err) { msg.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
+});
+
+document.getElementById('new-report-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target).entries());
+  const msg  = document.getElementById('new-report-msg');
+  try {
+    const json = await api('POST', '/api/admin/reports', data);
+    if (json.error) throw new Error(json.error);
+    msg.innerHTML = '<div class="alert" style="background:#d1fae5;color:#065f46;">Report saved!</div>';
+    e.target.reset(); loadReports(); loadStats();
+    setTimeout(() => closeModal('new-report-modal'), 1200);
+  } catch(err) { msg.innerHTML = `<div class="alert alert-error">${err.message}</div>`; }
+});
+
+// ── Auto-login ───────────────────────────────────
+if (token) {
+  api('GET', '/api/admin/stats').then(() => {
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('admin-page').style.display = 'flex';
+    loadAll();
+  }).catch(() => { localStorage.removeItem(TOKEN_KEY); token = null; });
+}
+</script>
+</body>
+</html>
